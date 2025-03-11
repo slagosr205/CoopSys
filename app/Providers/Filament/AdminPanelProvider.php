@@ -30,7 +30,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
-            ->font('Roboto')
+            ->font('Poppins')
             ->favicon(Storage::url('logo/logo.png'))
             
             ->colors([

@@ -45,7 +45,7 @@ class Transaccion extends Model
                     } else {
                         $cuenta->saldo += $transaccion->monto;
                     }
-
+                    
                     $cuenta->save(); // Guardar el nuevo saldo
                 }
             }
