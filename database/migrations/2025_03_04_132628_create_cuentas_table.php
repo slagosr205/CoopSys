@@ -16,7 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('cliente_id'); // Tipo correcto
            $table->unsignedBigInteger('tasa_interes_id'); // Tipo correcto
             $table->double('saldo', 15, 2)->default(0);
-            $table->string('estado_cuenta'); //indicara si la cuenta esta activa, bloqueada ;
+            $table->string('estado_cuenta')->default('activo'); //indicara si la cuenta esta activa, bloqueada ;
             $table->timestamp('fecha_apertura')->useCurrent();
            
             $table->foreign('cliente_id')->references('cliente_id')->on('clientes')->onDelete('cascade');

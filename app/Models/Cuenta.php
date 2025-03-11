@@ -39,7 +39,7 @@ class Cuenta extends Model
                 'usuario_id_registro' => auth()->id(), // Usuario que la creó
                 'tipo' => 'Deposito',
                 'monto' => $cuenta->saldo,
-                'fecha_transaccion' => now(),
+                'fecha_transaccion' => now()->toDateTimeString(),
                 
             ]);
         });

@@ -21,6 +21,7 @@ class Transaccion extends Model
         return $this->belongsTo(User::class, 'usuario_id_registro');
     }
 
+
     // Evento para actualizar el saldo antes de guardar la transacción
     protected static function boot()
     {

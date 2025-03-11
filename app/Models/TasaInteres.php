@@ -33,4 +33,6 @@ class TasaInteres extends Model
     public function prestamos() {
         return $this->hasMany(Prestamo::class, 'tasa_interes_id');
     }
+
+    
 }

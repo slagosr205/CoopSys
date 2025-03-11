@@ -61,11 +61,13 @@ class CuentaResource extends Resource
                 ->mask(RawJs::make('$money($input)')),
 
                 // En tu formulario, crea el campo select para seleccionar una tasa de interés
-                Select::make('tasa_id')
-                ->label('Tasa de interés')
-                ->options(
+                Select::make('tasa_interes_id')
+                ->relationship('tasasInteres','destino')
+                
+                //->label('Tasa de interés')
+                /*->options(
                     TasaInteres::all()->pluck('porcentaje', 'tasa_id')->toArray()
-                )
+                )*/
                 ->required()
                 ->placeholder('Seleccione una tasa de interés')
                 ->searchable()

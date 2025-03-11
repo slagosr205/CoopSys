@@ -19,6 +19,9 @@ return new class extends Migration
             $table->string('estado', 20);
             $table->timestamp('fecha_de_aprobacion')->nullable();
             $table->decimal('monto_aprobado', 15, 2)->nullable();
+            $table->integer('plazo_meses')->nullable();
+            $table->text('comentarios')->nullable();
+            $table->string('path_contract')->nullable();
             $table->timestamps();
             $table->foreignId('tasa_interes_id')->constrained('tasas_interes', 'tasa_id')->onDelete('cascade'); // Asegúrate que 'tasa_id' sea unsignedBigInteger
         });

@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('pagos', function (Blueprint $table) {
             $table->id('pago_id');
             $table->foreignId('prestamo_id')->constrained('prestamos', 'prestamo_id')->onDelete('cascade'); // Asegúrate que 'prestamo_id' sea unsignedBigInteger
+            $table->foreignId('usuario_id_registro')->constrained('users', 'id')->onDelete('cascade'); // Asegúrate que 'usuario_id' sea unsignedBigInteger
             $table->decimal('monto_pago', 15, 2);
             $table->timestamp('fecha_pago')->useCurrent();
             $table->timestamps();

@@ -2,12 +2,17 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Exports\PrestamoExporter;
 use App\Filament\Resources\PrestamoResource\Pages;
 use App\Filament\Resources\PrestamoResource\RelationManagers;
+use App\Filament\Resources\PrestamoResource\RelationManagers\PagosRelationManagerRelationManager;
+use App\Filament\Resources\PrestamoResource\RelationManagers\PlanPagosRelationManager;
 use App\Models\Prestamo;
-use App\Models\TasaInteres;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Filament\Actions\Action;
+use Filament\Actions\ExportAction;
 use Filament\Forms;
+use Filament\Forms\Components\Actions;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -25,6 +30,8 @@ use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Storage;
+use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction;
 
 class PrestamoResource extends Resource
 {
@@ -33,6 +40,8 @@ class PrestamoResource extends Resource
    // protected static ?string $title='Solicitud de Prestamos';
 
     protected static ?string $navigationIcon = 'heroicon-o-credit-card';
+
+
 
     public static function form(Form $form): Form
     {
@@ -43,7 +52,7 @@ class PrestamoResource extends Resource
                 ->label('Cliente')
                 ->relationship('cliente', 'nombre') // Relación con el cliente para mostrar su nombre
                 ->required(),
-            TextInput::make('monto_solicitado')
+                TextInput::make('monto_solicitado')
                 ->label('Monto Solicitado')
                 ->required()
                 ->numeric() // Asegura que el monto sea un número
@@ -54,7 +63,12 @@ class PrestamoResource extends Resource
                 ->required(),
             Select::make('estado')
                 ->label('Estado')
-                ->options(['Pendiente','Aprobado','Rechazado']),
+                ->options(['pendiente'=>'Pendiente','aprobado'=>'Aprobado','rechazado'=>'Rechazado']),
+
+            TextInput::make('plazo_meses')
+                ->label('Plazo')
+                ->required()
+                ->numeric(), // Asegura que el monto sea un número
 
             DatePicker::make('fecha_de_aprobacion')
                 ->label('Fecha de Aprobación')
@@ -83,14 +97,29 @@ class PrestamoResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->heading('Solicitudes de Prestamo')
+            ->heading('Reporte Solicitudes de Prestamo')
+           
             ->columns([
                 //
                 TextColumn::make('prestamo_id')->label('ID del Préstamo'),
                 TextColumn::make('cliente.nombre')->label('Cliente')->searchable(), // Mostramos el nombre del cliente
-                TextColumn::make('monto_solicitado')->label('Monto Solicitado')->money('HNL')->badge(),
+                TextColumn::make('monto_solicitado')->label('Monto Solicitado')->money('HNL')
+                ->badge()
+                ->color(fn ($record) => match ($record->estado) {
+                    'pendiente' => 'warning',  // Amarillo
+                    'aprobado'  => 'success',  // Verde
+                    'rechazado' => 'danger',   // Rojo
+                    default => 'gray',         // Por si hay otros estados
+                }),
                 TextColumn::make('fecha_solicitud')->label('Fecha de Solicitud')->date(),
-                TextColumn::make('estado')->label('Estado')->badge('warning'),
+                TextColumn::make('plazo_meses')->label('Plazo'),
+                TextColumn::make('estado')->label('Estado')  ->badge()
+                ->color(fn ($record) => match ($record->estado) {
+                    'pendiente' => 'warning',  // Amarillo
+                    'aprobado'  => 'success',  // Verde
+                    'rechazado' => 'danger',   // Rojo
+                    default => 'gray',         // Por si hay otros estados
+                }),
                 TextColumn::make('fecha_de_aprobacion')->label('Fecha de Aprobación')->date(),
                 TextColumn::make('monto_aprobado')->label('Monto Aprobado'),
                 TextColumn::make('created_at')->label('Creado')->date(),
@@ -123,9 +152,12 @@ class PrestamoResource extends Resource
                                 ->label('Fecha de Solicitud')
                                 ->default(fn ($record) => $record->fecha_solicitud)
                                 ->disabled(),
+                                TextInput::make('plazo_meses')
+                                ->label('Plazo')
+                                ->default(fn ($record) => $record->plazo_meses)
+                                ->disabled(),
                             ]),
-                        Step::make('Definir Aprobación')
-                            ->schema([
+                            Step::make('Definir Aprobación')->schema([
                                 Select::make('estado')
                                     ->label('Estado de Aprobación')
                                     ->options([
@@ -143,28 +175,54 @@ class PrestamoResource extends Resource
                                     ->label('Comentarios')
                                     ->nullable(),
                             ]),
+                            
                     ]),
                 ])
                 ->action(function (array $data, Prestamo $record):void
                 {
-                   
-                 $record->update([
-                    'estado' => $data['estado'],
-                    'monto_aprobado' => $data['estado'] === 'aprobado' ? $data['monto_aprobado'] : null,
-                    'comentarios'=>$data['comentarios'],
-                    'fecha_de_aprobacion' => now(),
-                 ]);
-                 Notification::make()
-                 ->title('Prestamo actualizado correctamente')
-                 ->success()
-                 ->send();
+                    if ($data['estado'] === 'aprobado') {
+                        $filePath='contratos/contrato_'.$record->cliente->nombre.'.pdf';
+
+                        $record->update([
+                            'estado' => $data['estado'],
+                            'monto_aprobado' => $data['estado'] === 'aprobado' ? $data['monto_aprobado'] : null,
+                            'comentarios'=>$data['comentarios'],
+                            'fecha_de_aprobacion' => now(),
+                            'path_contract'=>$filePath,
+                        ]);
+
+                        $pdf=Pdf::loadView('pdf.contrato_prestamo',['prestamo'=>$record]);
+
+                       
+
+                        Storage::disk('public')->put($filePath,$pdf->output());
+
+                        Notification::make()
+                        ->title('Prestamo actualizado correctamente')
+                        ->success()
+                        ->send();
+                        }else{
+                            $record->update([
+                                'estado' => $data['estado'],
+                                'comentarios' => $data['comentarios'],
+                            ]);
+                        }
                 }),
                // ->successNotification(Notification::make()->title('Registro actualizado')),
-               
+               Tables\Actions\Action::make('ver_contrato')
+                ->label('Ver Contrato')
+                ->icon('heroicon-o-document-text')
+                ->color('danger')
+                ->visible(fn ($record) => $record->estado === 'aprobado' && $record->path_contract)
+                ->url(fn ($record) => Storage::url($record->path_contract), true), // true = abre en una nueva pestaña
+                
+
+                
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    ExportBulkAction::make(),
                 ]),
             ]);
             
@@ -174,6 +232,8 @@ class PrestamoResource extends Resource
     {
         return [
             //
+            //PagosRelationManagerRelationManager::class
+            PlanPagosRelationManager::class,
         ];
     }
 
