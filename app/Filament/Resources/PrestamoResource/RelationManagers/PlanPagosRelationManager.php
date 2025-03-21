@@ -71,7 +71,7 @@ class PlanPagosRelationManager extends RelationManager
                     ->getStateUsing(function ($record) {
                         $fecha_pago = Carbon::parse($record->fecha_pago);
                         $estado = $record->estado;
-
+                         
                         // Compara si la fecha de pago está atrasada
                         if ($estado === 'pendiente') {
                             if ($fecha_pago->isPast()) {

@@ -6,9 +6,17 @@ use App\Filament\Resources\ClienteResource\Pages;
 use App\Filament\Resources\ClienteResource\RelationManagers;
 use App\Filament\Resources\TransaccionesResource\RelationManagers\CuentasRelationManager;
 use App\Filament\Resources\TransaccionResource\RelationManagers\ClientesRelationManager;
+use App\Filament\Widgets\GoogleMapField;
 use App\Models\Cliente;
 use App\Models\Transacciones;
 use Filament\Forms;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Resources\Resource;
@@ -37,6 +45,67 @@ class ClienteResource extends Resource
                 Forms\Components\TextInput::make('direccion'),
                 Forms\Components\TextInput::make('telefono'),
                 Forms\Components\Radio::make('es_socio')->label('Es socio?')->boolean(),
+                Forms\Components\FileUpload::make('archivos')
+                ->multiple()
+                ->disk('public')
+                ->directory(fn ($record) => $record ? 'documentos/' . $record->id : 'documentos/temp') // Usa 'temp' si aún no se ha creado el registro
+                ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png'])
+                ->rule(function () {
+                    return function ($attribute, $value, $fail) {
+                        $dniSubido = false;
+            
+                        foreach ($value as $archivo) {
+                            if (str_contains($archivo->getClientOriginalName(), 'DNI')) {
+                                $dniSubido = true;
+                            }
+                        }
+            
+                        if (!$dniSubido) {
+                            $fail('Debe subir el documento de identidad (DNI).');
+                        }
+                    };
+                })
+                ->helperText('Debe subir el DNI y opcionalmente el RTN.'),
+
+                Repeater::make('referencias_personales')
+                ->label('Referencias Personales')
+                ->relationship('referencias_personales') // Relación con el modelo Cliente
+                ->schema([
+                    TextInput::make('nombre_completo')
+                        ->label('Nombre Completo')
+                        ->required(),
+
+                    Select::make('relacion')
+                        ->label('Relación con el dueño')
+                        ->options([
+                            'hermano' => 'Hermano',
+                            'esposo' => 'Esposo',
+                            'esposa' => 'Esposa',
+                            'amigo' => 'Amigo',
+                            'otro' => 'Otro',
+                            'madre'=>'Madre',
+                            'padre'=>'Padre',
+                            'hijo'=>'Hijo',
+                        ])
+                        ->required(),
+
+                    DatePicker::make('fecha_nacimiento')
+                        ->label('Fecha de Nacimiento')
+                        ->required(),
+
+                    TextInput::make('porcentaje_beneficio')
+                        ->label('Porcentaje de Beneficio')
+                        ->numeric()
+                        ->suffix('%')
+                        ->required(),
+                    ])
+                ->collapsible()
+                ->itemLabel(fn (array $state): ?string => $state['nombre_completo'] ?? null) // Muestra el nombre en el encabezado
+                ->addActionLabel('Agregar Referencia')
+                ->columns(2),
+
+               
+
             ]);
     }
 

@@ -52,8 +52,9 @@ class Movimiento extends Model
                 // Buscar la cuota vigente (primera cuota con fecha de pago mayor o igual al inicio del mes actual)
                 $cuotaVigente = $prestamo->planPagos
                     ->where('estado', 'pendiente')
-                    ->firstWhere('fecha_pago', '<=', now()->startOfMonth());
-                
+                    ->whereBetween('fecha_pago', [now()->startOfMonth(), now()->endOfMonth()])
+                    ->first();
+               
                 if ($cuotaVigente) {
                     // Marcar la cuota como pagada
                     $cuotaVigente->update(['estado' => 'pagado']);

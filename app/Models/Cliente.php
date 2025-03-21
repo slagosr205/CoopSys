@@ -24,4 +24,9 @@ class Cliente extends Model
     public function prestamos() {
         return $this->hasMany(Prestamo::class, 'cliente_id');
     }
+
+    public function referencias_personales()
+    {
+        return $this->hasMany(ReferenciaPersonal::class, 'cliente_id');
+    }
 }

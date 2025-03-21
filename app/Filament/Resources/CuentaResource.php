@@ -20,6 +20,7 @@ use Filament\Resources\Resource;
 use Filament\Support\RawJs;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -29,6 +30,8 @@ class CuentaResource extends Resource
     protected static ?string $model = Cuenta::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';
+
+    
 
     public static function form(Form $form): Form
     {
@@ -72,7 +75,7 @@ class CuentaResource extends Resource
                 ->placeholder('Seleccione una tasa de interés')
                 ->searchable()
                 ->disabled(fn($livewire) => $livewire instanceof EditRecord),
-                
+            
                 DateTimePicker::make('fecha_apertura')
                 ->label('Fecha de Apertura')
                 ->required()
@@ -86,15 +89,32 @@ class CuentaResource extends Resource
             ->columns([
                 //
                 TextColumn::make('cuenta_id')->label('Cuenta ID'),
-                TextColumn::make('cliente.nombre')->label('Cliente'), // Mostramos el nombre del cliente
+                TextColumn::make('cliente.nombre')->label('Cliente')->searchable(), // Mostramos el nombre del cliente
                 TextColumn::make('saldo')->label('Saldo'),
                 TextColumn::make('fecha_apertura')->label('Fecha de Apertura'),
                 TextColumn::make('created_at')->label('Creado'),
-                TextColumn::make('updated_at')->label('Actualizado'),
+                TextColumn::make('updated_at')->label('Actualizado')->searchable(),
             ])
             ->filters([
                 //
+                Filter::make('fecha_apertura')
+                ->form([
+                    DatePicker::make('fecha_apertura')
+                ])
+                ->query(function(Builder $query, array $data): Builder{
+                    return $query
+                    ->when(
+
+                        $data['fecha_apertura'],
+                        fn (Builder $query, $date): Builder => $query->whereDate('fecha_apertura', '>=', $date),
+                    )
+                    ->when(
+                        $data['fecha_apertura'],
+                        fn (Builder $query, $date): Builder => $query->whereDate('fecha_apertura', '<=', $date),
+                    );
+                })
             ])
+
             ->actions([
                 Tables\Actions\EditAction::make(),
             ])

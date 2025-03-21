@@ -57,6 +57,7 @@ class MovimientosResource extends Resource
                     ->getOptionLabelFromRecordUsing(fn ($record) => 
                         "{$record->cliente->nombre} - Monto: HNL. {$record->monto_aprobado}"
                     )
+                   
                     ->preload()
                     ->searchable()
                     ->reactive()
@@ -69,9 +70,14 @@ class MovimientosResource extends Resource
                         // Verificar si tenemos el préstamo y su plan de pagos
                         if ($prestamoId) {
                             $prestamo = \App\Models\Prestamo::find($prestamoId);  // Obtiene el préstamo completo
-                            $cuotaVigente = $prestamo->planPagos->where('estado', 'pendiente')
-                            ->firstWhere('fecha_pago', '<=', now());
-                
+                            $cuotaVigente = $prestamo->planPagos
+                            ->where('estado', 'pendiente')
+                            ->filter(function ($pago) {
+                                $fechaPago = \Carbon\Carbon::parse($pago->fecha_pago); // Convertir a Carbon
+                                return $fechaPago->between(now()->startOfMonth(), now()->endOfMonth());
+                            })
+                            ->first();
+                            
                             $set('monto_ingresar', $cuotaVigente ? $cuotaVigente->cuota : 'No disponible');
                         }
                     }),
