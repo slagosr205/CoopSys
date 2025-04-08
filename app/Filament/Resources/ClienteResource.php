@@ -9,7 +9,9 @@ use App\Filament\Resources\TransaccionResource\RelationManagers\ClientesRelation
 use App\Filament\Widgets\GoogleMapField;
 use App\Models\Cliente;
 use App\Models\Transacciones;
+
 use Filament\Forms;
+use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
@@ -21,6 +23,7 @@ use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Actions\Action as ActionsAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -50,21 +53,9 @@ class ClienteResource extends Resource
                 ->disk('public')
                 ->directory(fn ($record) => $record ? 'documentos/' . $record->id : 'documentos/temp') // Usa 'temp' si aún no se ha creado el registro
                 ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png'])
-                ->rule(function () {
-                    return function ($attribute, $value, $fail) {
-                        $dniSubido = false;
-            
-                        foreach ($value as $archivo) {
-                            if (str_contains($archivo->getClientOriginalName(), 'DNI')) {
-                                $dniSubido = true;
-                            }
-                        }
-            
-                        if (!$dniSubido) {
-                            $fail('Debe subir el documento de identidad (DNI).');
-                        }
-                    };
-                })
+                ->storeFileNamesIn('archivos') // Guarda los nombres en la BD
+                ->preserveFilenames() // Mantiene los nombres originales
+
                 ->helperText('Debe subir el DNI y opcionalmente el RTN.'),
 
                 Repeater::make('referencias_personales')
@@ -130,6 +121,15 @@ class ClienteResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
+            ])->emptyStateHeading('No hay Información sobre clientes')
+            ->emptyStateDescription('Favor cree un registro para poder visualizar clientes, de click "New Cliente"')
+            ->emptyStateIcon('heroicon-o-bookmark')
+            ->emptyStateActions([
+                ActionsAction::make('create')
+                ->label('Crear Cliente')
+                ->url(route('filament.admin.resources.clientes.create')) // Asegurar que la URL sea correcta
+                ->icon('heroicon-m-plus')
+                ->button(),
             ]);
     }
 

@@ -30,15 +30,17 @@ class CuentasRelationManager extends RelationManager
                     ->relationship('cliente', 'nombre') // 'cliente' es la relación definida en el modelo
                     ->preload()
                     ->required() // Requerido
+                    ->disabledOn('edit')
                     ->searchable() // Permite la búsqueda de clientes
                     ->label('Cliente'), // Etiqueta que se muestra en el formulari
+
                     TextInput::make('saldo')
                     ->label('Saldo')
                     ->required()
                     ->numeric() // Asegura que el valor sea un número
                     ->minValue(0)
                     ->step(0.01)
-                    ->disabled(fn($livewire)=>$livewire instanceof EditRecord)
+                    ->disabledOn('edit')
                     ->stripCharacters(',')
                     ->mask(RawJs::make('$money($input)')),
 
@@ -50,7 +52,7 @@ class CuentasRelationManager extends RelationManager
                     ->required()
                     ->placeholder('Seleccione una tasa de interés')
                     ->searchable()
-                    ->disabled(fn($livewire) => $livewire instanceof EditRecord),
+                    ->disabledOn('edit'),
 
                     // En tu formulario, crea el campo select para seleccionar una tasa de interés
                     Select::make('estado_cuenta')
@@ -61,12 +63,13 @@ class CuentasRelationManager extends RelationManager
                             'inhabilitado'=>'Inhabilitado',
                         ]
                     )
-                    ->hidden(fn($livewire) => $livewire instanceof CreateRecord)
+                    ->hiddenOn('create')
                     ->searchable(),
                     
                     
                     DateTimePicker::make('fecha_apertura')
                     ->label('Fecha de Apertura')
+                    ->disabledOn('edit')
                     ->required()
                     ,
             ]);
@@ -78,7 +81,7 @@ class CuentasRelationManager extends RelationManager
             ->recordTitleAttribute('cuenta_id')
             ->columns([
                 Tables\Columns\TextColumn::make('cuenta_id'),
-                Tables\Columns\TextColumn::make('saldo'),
+                Tables\Columns\TextColumn::make('saldo')->money('HNL'),
             ])
             ->filters([
                 //

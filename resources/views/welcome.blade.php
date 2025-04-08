@@ -269,7 +269,9 @@
                 </div>
             </main>
         </div>
-
+        <div>
+            <a href="https://api.whatsapp.com/send?phone=50494602774/?text=urlencodedtext ( whatsappphonenumber es un número de teléfono completo en formato internacional y URL-encodedtext es el mensaje predeterminado incorporado a la URL)">prueba</a>
+        </div>
         @if (Route::has('login'))
             <div class="h-14.5 hidden lg:block"></div>
         @endif

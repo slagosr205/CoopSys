@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('direccion', 250);
             $table->string('telefono', 20);
             $table->boolean('es_socio')->default(false);
+            $table->string('archivos');
             $table->timestamps();
         });
     }

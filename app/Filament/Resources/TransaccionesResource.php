@@ -13,6 +13,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -52,22 +53,26 @@ class TransaccionesResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->heading('Reporte de Transacciones')
             ->columns([
                 //
                 Tables\Columns\TextColumn::make('transaccion_id'),
-                Tables\Columns\TextColumn::make('cuenta_id'),
-                Tables\Columns\TextColumn::make('tipo')
-                ->color(fn (string $state): string  =>match($state) {'Retiro' => 'danger' ,'Deposito'=> 'success','Interes'=>'success'})
+                Tables\Columns\TextColumn::make('cuenta.cliente.nombre')->searchable(),
+                Tables\Columns\TextColumn::make('tipo')                              
+                ->color(fn (string $state): string  =>match($state) {'Retiro' => 'danger' ,'Deposito'=> 'success','Interes'=>'warning'})
                 ->weight(FontWeight::Bold),
                 Tables\Columns\TextColumn::make('monto')
-                ->color(fn ($record) => match($record->tipo){'Retiro' => 'danger' ,'Deposito'=> 'success','Interes'=>'success'})
+                ->color(fn ($record) => match($record->tipo){'Retiro' => 'danger' ,'Deposito'=> 'success','Interes'=>'warning'})
                 ->weight(FontWeight::Bold)
                 ->money('HNL'),
-                Tables\Columns\TextColumn::make('fecha_transaccion'),
+                Tables\Columns\TextColumn::make('fecha_transaccion')->date(),
+            ])
+            ->groups([
+                'cuenta.cliente.nombre',
             ])
             ->filters([
                 //
-
+                
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

@@ -123,7 +123,7 @@ class TasaInteresResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])->emptyStateHeading('No hay informacion ');
     }
 
     public static function getRelations(): array

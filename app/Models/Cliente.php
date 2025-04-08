@@ -12,7 +12,11 @@ class Cliente extends Model
     protected $primaryKey = 'cliente_id';
     protected $fillable = [
         'nombre', 'identificacion', 'tipo_identificacion', 'fecha_nacimiento',
-        'genero', 'direccion', 'telefono', 'es_socio'
+        'genero', 'direccion', 'telefono', 'es_socio','archivos'
+    ];
+
+    protected $casts = [
+        'archivos' => 'array', // Para que Laravel maneje `archivos` como un array
     ];
 
     // Relación con cuentas (Un cliente puede tener muchas cuentas)

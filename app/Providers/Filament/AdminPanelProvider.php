@@ -2,8 +2,12 @@
 
 namespace App\Providers\Filament;
 
+use Althinect\FilamentSpatieRolesPermissions\FilamentSpatieRolesPermissions;
+use Althinect\FilamentSpatieRolesPermissions\FilamentSpatieRolesPermissionsPlugin;
 use App\Filament\Resources\ClienteResource;
 use App\Filament\Resources\ClienteResource\Widgets\StatsClientview;
+use App\Filament\Resources\MovimientosResource\Widgets\StatsMovimientostview;
+use App\Filament\Resources\PrestamoResource\Widgets\PrestamosPendientes;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -20,7 +24,7 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-
+use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 class AdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
@@ -45,7 +49,9 @@ class AdminPanelProvider extends PanelProvider
             ->widgets([
                 Widgets\AccountWidget::class,
               //  Widgets\FilamentInfoWidget::class,
-                StatsClientview::class
+                StatsClientview::class,
+                StatsMovimientostview::class,
+                PrestamosPendientes::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -60,8 +66,15 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-            ]);
+            ])
+            ->plugins([
+               // FilamentShieldPlugin::make(),
+                FilamentSpatieRolesPermissionsPlugin::make(),
+            ]); // Elimina el cierre extra de ])
+
+
+
+        }
     }
 
-    
-}
+

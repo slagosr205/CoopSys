@@ -12,6 +12,7 @@ use App\Models\TasaInteres;
 use Filament\Forms;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
@@ -52,6 +53,52 @@ class CuentaResource extends Resource
                     Forms\Components\TextInput::make('telefono'),
                     
                     Forms\Components\Radio::make('es_socio')->label('Es socio?')->boolean(),
+                    Forms\Components\FileUpload::make('archivos')
+                ->multiple()
+                ->disk('public')
+                ->directory(fn ($record) => $record ? 'documentos/' . $record->id : 'documentos/temp') // Usa 'temp' si aún no se ha creado el registro
+                ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png'])
+                ->storeFileNamesIn('archivos') // Guarda los nombres en la BD
+                ->preserveFilenames() // Mantiene los nombres originales
+
+                ->helperText('Debe subir el DNI y opcionalmente el RTN.'),
+
+                Repeater::make('referencias_personales')
+                ->label('Referencias Personales')
+                ->relationship('referencias_personales') // Relación con el modelo Cliente
+                ->schema([
+                    TextInput::make('nombre_completo')
+                        ->label('Nombre Completo')
+                        ->required(),
+
+                    Select::make('relacion')
+                        ->label('Relación con el dueño')
+                        ->options([
+                            'hermano' => 'Hermano',
+                            'esposo' => 'Esposo',
+                            'esposa' => 'Esposa',
+                            'amigo' => 'Amigo',
+                            'otro' => 'Otro',
+                            'madre'=>'Madre',
+                            'padre'=>'Padre',
+                            'hijo'=>'Hijo',
+                        ])
+                        ->required(),
+
+                    DatePicker::make('fecha_nacimiento')
+                        ->label('Fecha de Nacimiento')
+                        ->required(),
+
+                    TextInput::make('porcentaje_beneficio')
+                        ->label('Porcentaje de Beneficio')
+                        ->numeric()
+                        ->suffix('%')
+                        ->required(),
+                    ])
+                ->collapsible()
+                ->itemLabel(fn (array $state): ?string => $state['nombre_completo'] ?? null) // Muestra el nombre en el encabezado
+                ->addActionLabel('Agregar Referencia')
+                ->columns(2),
                 ]),
                 TextInput::make('saldo')
                 ->label('Saldo')
@@ -90,10 +137,10 @@ class CuentaResource extends Resource
                 //
                 TextColumn::make('cuenta_id')->label('Cuenta ID'),
                 TextColumn::make('cliente.nombre')->label('Cliente')->searchable(), // Mostramos el nombre del cliente
-                TextColumn::make('saldo')->label('Saldo'),
-                TextColumn::make('fecha_apertura')->label('Fecha de Apertura'),
-                TextColumn::make('created_at')->label('Creado'),
-                TextColumn::make('updated_at')->label('Actualizado')->searchable(),
+                TextColumn::make('saldo')->label('Saldo')->money('HNL'),
+                TextColumn::make('fecha_apertura')->label('Fecha de Apertura')->date(),
+                TextColumn::make('created_at')->label('Creado')->date(),
+                TextColumn::make('updated_at')->label('Actualizado')->date()->searchable(),
             ])
             ->filters([
                 //

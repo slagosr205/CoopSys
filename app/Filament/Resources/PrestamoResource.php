@@ -51,7 +51,24 @@ class PrestamoResource extends Resource
                 Select::make('cliente_id')
                 ->label('Cliente')
                 ->relationship('cliente', 'nombre') // Relación con el cliente para mostrar su nombre
-                ->required(),
+                ->required()
+                ->live() // Detecta cambios en tiempo real
+                ->afterStateUpdated(function ($state, $set) {
+                    if ($state) {
+                        $prestamoVigente = \App\Models\Prestamo::where('cliente_id', $state)
+                            ->where('estado', 'aprobado') // Asegúrate de que "estado" sea el campo correcto
+                            ->exists();
+            
+                        if ($prestamoVigente) {
+                            Notification::make()
+                                ->title('Cliente con préstamo vigente')
+                                ->danger()
+                                ->body('Este cliente ya tiene un préstamo en curso.')
+                                ->send();
+                        }
+                    }
+                }),
+                
                 TextInput::make('monto_solicitado')
                 ->label('Monto Solicitado')
                 ->required()
@@ -121,13 +138,13 @@ class PrestamoResource extends Resource
                     default => 'gray',         // Por si hay otros estados
                 }),
                 TextColumn::make('fecha_de_aprobacion')->label('Fecha de Aprobación')->date(),
-                TextColumn::make('monto_aprobado')->label('Monto Aprobado'),
+                TextColumn::make('monto_aprobado')->label('Monto Aprobado')->money('HNL'),
                 TextColumn::make('created_at')->label('Creado')->date(),
                 TextColumn::make('updated_at')->label('Actualizado')->date(),
             ])
             ->filters([
                 //
-                Filter::make('cliente.nombre')->label('filtra por cliente'),
+                Filter::make('cliente.nombre')->label('filtrar por cliente'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
